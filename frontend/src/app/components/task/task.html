@@ -1,0 +1,17 @@
+<div class="page">
+  <div class="card">
+
+    <div class="header">
+      <h2>My Tasks</h2>
+      <button (click)="addTask()">+ New Task</button>
+    </div>
+
+    <ul>
+      <li *ngFor="let task of tasks">
+        <span>{{ task.title }}</span>
+        <small>{{ task.status }}</small>
+      </li>
+    </ul>
+
+  </div>
+</div>

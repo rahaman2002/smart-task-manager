@@ -1,0 +1,11 @@
+/* src/styles.css */
+
+/* Correct import for ngx-toastr v17+ */
+@import "ngx-toastr/toastr";
+
+/* Global body styles */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  background: #f0f2f5;
+}

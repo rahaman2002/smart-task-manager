@@ -1,0 +1,46 @@
+.page {
+  min-height: 100vh;
+  background: #f5f6f8;
+  display: flex;
+  justify-content: center;
+  padding-top: 60px;
+}
+
+.card {
+  width: 600px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 20px 40px rgba(0,0,0,.08);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+button {
+  background: #7b61ff;
+  border: none;
+  color: white;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+ul {
+  list-style: none;
+  padding: 0;
+}
+
+li {
+  padding: 12px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+}
+
+small {
+  color: #777;
+}
