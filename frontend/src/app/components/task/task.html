@@ -3,15 +3,69 @@
 
     <div class="header">
       <h2>My Tasks</h2>
-      <button (click)="addTask()">+ New Task</button>
+      <div class="session" *ngIf="session">
+        {{ session.username }} | Last Login: {{ session.lastLogin | date:'short' }}
+        <button (click)="logout()">Logout</button>
+      </div>
     </div>
 
-    <ul>
-      <li *ngFor="let task of tasks">
-        <span>{{ task.title }}</span>
-        <small>{{ task.status }}</small>
-      </li>
-    </ul>
+    <!-- Fixed Add/Edit Form -->
+    <form [formGroup]="taskForm" (ngSubmit)="addOrUpdateTask()" class="task-form fixed-form">
+
+      <input type="text" placeholder="Task title" formControlName="title" (input)="searchTasks($event.target.value)" />
+
+      <textarea placeholder="Description" formControlName="description"></textarea>
+
+      <div class="form-row">
+        <select formControlName="priority">
+          <option value="LOW">Low</option>
+          <option value="MEDIUM">Medium</option>
+          <option value="HIGH">High</option>
+        </select>
+
+        <input type="date" formControlName="dueDate" />
+      </div>
+
+      <button type="submit" class="submit-btn">
+        {{ isEditing ? 'Update Task' : 'Add Task' }}
+      </button>
+
+    </form>
+
+    <!-- Scrollable Task List -->
+    <div class="task-list-container">
+      <ul class="task-list">
+        <li *ngFor="let task of tasks" class="task-card" [@fadeIn]>
+          <div class="task-info">
+            <h4 [class.done]="task.status === 'DONE'">{{ task.title }}</h4>
+            <p>{{ task.description }}</p>
+            <small>Priority: {{ task.priority }}</small><br>
+            <small>Due: {{ task.dueDate | date }}</small>
+          </div>
+          <div class="actions">
+            <button class="status-btn" (click)="toggleStatus(task)">
+              {{ task.status === 'OPEN' ? '✔ Done' : '↺ Reopen' }}
+            </button>
+            <button class="edit-btn" (click)="editTask(task)">✎</button>
+            <button class="delete-btn" (click)="deleteTask(task.id)">🗑</button>
+          </div>
+        </li>
+      </ul>
+
+      <!-- Pagination -->
+      <div class="pagination">
+        <button (click)="prevPage()" [disabled]="page===0">Prev</button>
+        <span>Page {{ page + 1 }} of {{ totalPages }}</span>
+        <button (click)="nextPage()" [disabled]="page+1>=totalPages">Next</button>
+      </div>
+
+      <!-- Filter Buttons Fixed at Bottom -->
+      <div class="filters fixed-filters">
+        <button (click)="setFilter('ALL')">All</button>
+        <button (click)="setFilter('OPEN')">Open</button>
+        <button (click)="setFilter('DONE')">Completed</button>
+      </div>
+    </div>
 
   </div>
 </div>

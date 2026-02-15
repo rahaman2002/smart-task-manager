@@ -1,49 +1,51 @@
-package com.example.smarttaskmanager.controller;
+package org.example.smarttaskmanager.controller;
 
-import com.example.smarttaskmanager.model.Task;
-import com.example.smarttaskmanager.model.User;
-import com.example.smarttaskmanager.repository.UserRepository;
-import com.example.smarttaskmanager.service.TaskService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.Authentication;
+import org.example.smarttaskmanager.model.Task;
+import org.example.smarttaskmanager.model.User;
+import org.example.smarttaskmanager.service.TaskService;
+import org.example.smarttaskmanager.service.UserService;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-
+import org.springframework.data.domain.Page;
 @RestController
 @RequestMapping("/api/tasks")
 @RequiredArgsConstructor
 public class TaskController {
 
     private final TaskService taskService;
-    private final UserRepository userRepository;
+    private final UserService userService; // fetch logged-in user
 
-    @PostMapping("/create")
-    public Task createTask(@RequestBody Task task, Authentication auth) {
-        User user = userRepository.findByUsername(auth.getName()).get();
+    @PostMapping
+    public Task addTask(@RequestBody Task task, @RequestHeader("Authorization") String token) {
+        User user = userService.getUserFromToken(token);
         task.setAssignedTo(user);
         return taskService.createTask(task);
     }
 
-    @GetMapping("/my-tasks")
-    public List<Task> getMyTasks(Authentication auth) {
-        User user = userRepository.findByUsername(auth.getName()).get();
-        return taskService.getTasksByUser(user);
-    }
-
-    @PutMapping("/update")
-    public Task updateTask(@RequestBody Task task) {
+    @PutMapping("/{id}")
+    public Task updateTask(@PathVariable Long id, @RequestBody Task task, @RequestHeader("Authorization") String token) {
+        task.setId(id);
         return taskService.updateTask(task);
     }
 
-    @DeleteMapping("/delete/{id}")
-    public String deleteTask(@PathVariable Long id) {
+    @DeleteMapping("/{id}")
+    public void deleteTask(@PathVariable Long id) {
         taskService.deleteTask(id);
-        return "Task deleted";
     }
 
-    @GetMapping("/all")
-    public List<Task> getAllTasks() {
-        return taskService.getAllTasks();
+    @GetMapping
+    public Page<Task> getTasks(
+            @RequestHeader("Authorization") String token,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String search
+    ) {
+        User user = userService.getUserFromToken(token);
+        return taskService.getTasksByUser(user, page, size, search);
+    }
+
+    @GetMapping("/session")
+    public User getSession(@RequestHeader("Authorization") String token) {
+        return userService.getUserFromToken(token); // returns username, lastLogin etc
     }
 }

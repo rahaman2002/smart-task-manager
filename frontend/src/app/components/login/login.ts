@@ -1,8 +1,11 @@
 import { Component } from '@angular/core';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { ToastrService } from 'ngx-toastr';
 import { AuthService } from '../../services/auth.service';
+import { HttpErrorResponse } from '@angular/common/http';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-login',
@@ -10,67 +13,103 @@ import { AuthService } from '../../services/auth.service';
   templateUrl: './login.html',
   styleUrls: ['./login.css'],
   imports: [ReactiveFormsModule, CommonModule],
+  providers: [FormBuilder],
 })
 export class LoginComponent {
+
   isLoginMode = true;
+  isLoading = false;
+
   loginForm: FormGroup;
   registerForm: FormGroup;
 
-  constructor(private fb: FormBuilder, private authService: AuthService,
-              private toastr: ToastrService) {
+  showLoginPassword = false;
+  showRegisterPassword = false;
 
-    // ===== Login Form =====
-    this.loginForm = fb.group({
-      username: ['', Validators.required],
+  constructor(
+    private fb: FormBuilder,
+    private router: Router,
+    private authService: AuthService,
+    private toastr: ToastrService
+  ) {
+
+    this.loginForm = this.fb.group({
+      username: ['', [Validators.required, Validators.minLength(4)]],
       password: ['', [Validators.required, Validators.minLength(4)]]
     });
 
-    // ===== Register Form =====
-    this.registerForm = fb.group({
-      username: ['', Validators.required],
+    this.registerForm = this.fb.group({
+      username: ['', [Validators.required, Validators.minLength(4)]],
       password: ['', [Validators.required, Validators.minLength(4)]]
     });
   }
 
   toggleMode() {
     this.isLoginMode = !this.isLoginMode;
+
+    // Reset forms & password visibility
+    this.loginForm.reset();
+    this.registerForm.reset();
+    this.showLoginPassword = false;
+    this.showRegisterPassword = false;
   }
 
   submitLogin() {
-    if (this.loginForm.valid) {
-      this.authService.login(this.loginForm.value).subscribe({
-        next: () => {
-          this.toastr.success('Login successful!');
-        },
-        error: err => {
-          // err.status comes from HTTP response
-          if (err.status === 404) {
-            this.toastr.error('User not found');
-          } else if (err.status === 401) {
-            this.toastr.error('Invalid username or password');
-          } else {
-            this.toastr.error(err.error || 'Login failed');
-          }
+    if (this.loginForm.invalid) return;
+
+    this.isLoading = true;
+
+    this.authService.login(this.loginForm.value).subscribe({
+      next: () => {
+        this.isLoading = false;
+        this.toastr.success('Login successful!');
+        // Navigate to tasks
+        this.router.navigate(['tasks']);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.isLoading = false;
+
+        if (err.status === 404) {
+          this.toastr.error('User not found');
+        } else if (err.status === 401) {
+          this.toastr.error('Invalid username or password');
+        } else {
+          this.toastr.error('Login failed. Please try again.');
         }
-      });
-    }
+      }
+    });
   }
 
   submitRegister() {
-    if (this.registerForm.valid) {
-      this.authService.register(this.registerForm.value).subscribe({
-        next: () => {
-          this.toastr.success('Registration successful! You can now login.');
-          this.toggleMode(); // switch to login
-        },
-        error: err => {
-          if (err.status === 409) {
-            this.toastr.error('User exists, please login.');
-          } else {
-            this.toastr.error(err.error || 'Registration failed');
-          }
+    if (this.registerForm.invalid) return;
+
+    this.isLoading = true;
+
+    this.authService.register(this.registerForm.value).subscribe({
+      next: () => {
+        this.isLoading = false;
+        this.toastr.success('Registration successful! You can now login.');
+        this.toggleMode();
+        this.router.navigate(['tasks']);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.isLoading = false;
+
+        if (err.status === 409) {
+          this.toastr.error('User already exists. Please login.');
+        } else {
+          this.toastr.error('Registration failed. Please try again.');
         }
-      });
-    }
+      }
+    });
   }
+
+  toggleLoginPassword() {
+    this.showLoginPassword = !this.showLoginPassword;
+  }
+
+  toggleRegisterPassword() {
+    this.showRegisterPassword = !this.showRegisterPassword;
+  }
+
 }

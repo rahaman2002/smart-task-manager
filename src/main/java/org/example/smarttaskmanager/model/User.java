@@ -1,11 +1,10 @@
-package com.example.smarttaskmanager.model;
-
+package org.example.smarttaskmanager.model;
 import jakarta.persistence.*;
 import lombok.*;
 import java.util.Set;
 
 @Entity
-@Table(name = "users") // ✅ FIX
+@Table(name = "users")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

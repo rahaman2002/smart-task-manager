@@ -1,4 +1,4 @@
-package com.example.smarttaskmanager.config;
+package org.example.smarttaskmanager.config;
 
 import org.springframework.amqp.core.Queue;
 import org.springframework.context.annotation.Bean;

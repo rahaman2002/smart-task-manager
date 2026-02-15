@@ -1,4 +1,3 @@
-
 <div class="page">
   <div class="auth-card">
 
@@ -10,51 +9,81 @@
 
     <!-- ===== Login Form ===== -->
     <form *ngIf="isLoginMode" [formGroup]="loginForm" (ngSubmit)="submitLogin()">
+
       <div class="field">
         <label>Username</label>
         <input type="text" formControlName="username" />
         <span *ngIf="loginForm.get('username')?.touched && loginForm.get('username')?.invalid">
-          Username is required
+          Please enter a username with at least 4 characters
         </span>
       </div>
 
       <div class="field">
         <label>Password</label>
-        <input type="password" formControlName="password" />
+        <div class="password-wrapper">
+          <input 
+            [type]="showLoginPassword ? 'text' : 'password'"
+            formControlName="password" 
+          />
+          <i 
+            class="fa"
+            [ngClass]="showLoginPassword ? 'fa-eye-slash' : 'fa-eye'"
+            (click)="toggleLoginPassword()">
+          </i>
+        </div>
+
         <span *ngIf="loginForm.get('password')?.touched && loginForm.get('password')?.invalid">
-          Minimum 4 characters
+          Please enter a password with at least 4 characters
         </span>
       </div>
 
       <button type="submit" [disabled]="loginForm.invalid">Sign In</button>
-      <p class="switch-text">Don't have an account? 
+
+      <p class="switch-text">
+        Don't have an account?
         <span class="switch-link" (click)="toggleMode()">Sign Up</span>
       </p>
+
     </form>
 
     <!-- ===== Register Form ===== -->
     <form *ngIf="!isLoginMode" [formGroup]="registerForm" (ngSubmit)="submitRegister()">
+
       <div class="field">
         <label>Username</label>
         <input type="text" formControlName="username" />
         <span *ngIf="registerForm.get('username')?.touched && registerForm.get('username')?.invalid">
-          Username is required
+          Please enter a username with at least 4 characters
         </span>
       </div>
 
       <div class="field">
         <label>Password</label>
-        <input type="password" formControlName="password" />
+        <div class="password-wrapper">
+          <input 
+            [type]="showRegisterPassword ? 'text' : 'password'"
+            formControlName="password" 
+          />
+          <i 
+            class="fa"
+            [ngClass]="showRegisterPassword ? 'fa-eye-slash' : 'fa-eye'"
+            (click)="toggleRegisterPassword()">
+          </i>
+        </div>
+
         <span *ngIf="registerForm.get('password')?.touched && registerForm.get('password')?.invalid">
-          Minimum 4 characters
+          Please enter a password with at least 4 characters
         </span>
       </div>
 
       <button type="submit" [disabled]="registerForm.invalid">Sign Up</button>
-      <p class="switch-text">Already have an account? 
+
+      <p class="switch-text">
+        Already have an account?
         <span class="switch-link" (click)="toggleMode()">Sign In</span>
       </p>
+
     </form>
+
   </div>
 </div>
-

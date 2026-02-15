@@ -1,6 +1,6 @@
-package com.example.smarttaskmanager.repository;
+package org.example.smarttaskmanager.repository;
 
-import com.example.smarttaskmanager.model.User;
+import org.example.smarttaskmanager.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 

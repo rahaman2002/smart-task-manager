@@ -1,4 +1,4 @@
-package com.example.smarttaskmanager.model;
+package org.example.smarttaskmanager.model;
 
 import jakarta.persistence.*;
 import lombok.*;

@@ -1,4 +1,4 @@
-package com.example.smarttaskmanager;
+package org.example.smarttaskmanager;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

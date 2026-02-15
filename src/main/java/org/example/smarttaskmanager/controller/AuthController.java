@@ -1,16 +1,21 @@
+package org.example.smarttaskmanager.controller;
+import lombok.RequiredArgsConstructor;
+import org.example.smarttaskmanager.model.User;
+import org.example.smarttaskmanager.security.JwtTokenProvider;
+import org.example.smarttaskmanager.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.web.bind.annotation.*;
-import lombok.RequiredArgsConstructor;
-import com.example.smarttaskmanager.service.UserService;
-import com.example.smarttaskmanager.security.JwtTokenProvider;
-import com.example.smarttaskmanager.model.User;
-import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.Map;
 
 
 @RestController
@@ -53,7 +58,10 @@ public class AuthController {
             User user = userService.registerUser(request.username, request.password);
             return ResponseEntity.ok("User registered: " + user.getUsername());
         } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+            return ResponseEntity
+                    .status(HttpStatus.CONFLICT)
+                    .body(Map.of("message", e.getMessage()).toString());
+
         }
     }
 

@@ -1,9 +1,11 @@
-package com.example.smarttaskmanager.security;
+package org.example.smarttaskmanager.config;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.example.smarttaskmanager.security.CustomUserDetailsService;
+import org.example.smarttaskmanager.security.JwtTokenProvider;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;

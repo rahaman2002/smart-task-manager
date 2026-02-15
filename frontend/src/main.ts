@@ -1,17 +1,31 @@
 import { bootstrapApplication } from '@angular/platform-browser';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideToastr } from 'ngx-toastr';
-import { AppComponent } from './app/app';
-bootstrapApplication(AppComponent, {
+import { importProvidersFrom } from '@angular/core';
+import { ReactiveFormsModule } from '@angular/forms';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { authInterceptor } from './app/interceptors/auth.interceptor';
+import { provideRouter, RouterModule } from '@angular/router';
+import { routes } from './app/app.routes';
+import { App } from './app/app';
+
+bootstrapApplication(App, {
   providers: [
-    provideAnimations(),
+    importProvidersFrom(ReactiveFormsModule),
+    provideHttpClient(),
+    provideHttpClient(
+      withInterceptors([authInterceptor])
+    ),
+    importProvidersFrom(RouterModule.forRoot(routes)),
+    provideRouter(routes),
     provideToastr({
-      // Global Toastr options
-      positionClass: 'toast-top-right',  // top-right corner
-      timeOut: 3000,                     // 3 seconds
-      closeButton: true,                 // show close button
-      progressBar: true,                 // show progress bar
-      preventDuplicates: true            // prevent duplicate messages
+      positionClass: 'toast-top-right',
+      timeOut: 3000,
+      closeButton: true,
+      progressBar: true,
+      preventDuplicates: true
     })
   ]
 }).catch(err => console.error(err));
+
+

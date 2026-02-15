@@ -1,10 +1,12 @@
+// app.ts
 import { Component } from '@angular/core';
-import { LoginComponent } from './components/login/login';
+import { RouterOutlet } from "@angular/router";
 
 @Component({
-  selector: 'app-root',          // This will be your root element in index.html
-  standalone: true,              // Standalone component (Angular 21+)
-  template: `<app-login></app-login>`, // Render the login inside
-  imports: [LoginComponent],     // Import the login component
+  selector: 'app-root',
+  standalone: true,
+  templateUrl: './app.html',
+  styleUrls: ['./app.css'],
+  imports: [RouterOutlet],
 })
-export class AppComponent {}
+export class App {}

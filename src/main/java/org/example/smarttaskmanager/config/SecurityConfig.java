@@ -1,8 +1,6 @@
-package com.example.smarttaskmanager.config;
-
-import com.example.smarttaskmanager.security.CustomUserDetailsService;
-import com.example.smarttaskmanager.security.JwtAuthFilter;
+package org.example.smarttaskmanager.config;
 import lombok.RequiredArgsConstructor;
+import org.example.smarttaskmanager.security.CustomUserDetailsService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;

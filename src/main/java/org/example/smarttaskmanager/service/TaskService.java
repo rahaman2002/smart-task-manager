@@ -1,10 +1,12 @@
-package com.example.smarttaskmanager.service;
+package org.example.smarttaskmanager.service;
 
-import com.example.smarttaskmanager.model.Task;
-import com.example.smarttaskmanager.model.User;
-import com.example.smarttaskmanager.repository.TaskRepository;
 import lombok.RequiredArgsConstructor;
+import org.example.smarttaskmanager.model.Task;
+import org.example.smarttaskmanager.model.User;
+import org.example.smarttaskmanager.repository.TaskRepository;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
@@ -21,15 +23,9 @@ public class TaskService {
     public Task createTask(Task task) {
         task.setCreatedAt(LocalDateTime.now());
         task.setUpdatedAt(LocalDateTime.now());
-        Task savedTask = taskRepository.save(task);
-
-        // Send notification
-        rabbitTemplate.convertAndSend("task_notifications", "New Task Assigned: " + task.getTitle());
-        return savedTask;
-    }
-
-    public List<Task> getTasksByUser(User user) {
-        return taskRepository.findByAssignedTo(user);
+        Task saved = taskRepository.save(task);
+        rabbitTemplate.convertAndSend("task_notifications", "New Task: " + task.getTitle());
+        return saved;
     }
 
     public Task updateTask(Task task) {
@@ -43,7 +39,14 @@ public class TaskService {
         taskRepository.deleteById(id);
     }
 
-    @Cacheable(value = "tasks")
+    public Page<Task> getTasksByUser(User user, int page, int size, String search) {
+        if (search != null && !search.isEmpty()) {
+            return taskRepository.findByAssignedToAndTitleContainingIgnoreCase(user, search, PageRequest.of(page, size));
+        }
+        return taskRepository.findByAssignedTo(user, PageRequest.of(page, size));
+    }
+
+    @Cacheable("tasks")
     public List<Task> getAllTasks() {
         return taskRepository.findAll();
     }
