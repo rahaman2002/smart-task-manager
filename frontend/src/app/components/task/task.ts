@@ -1,22 +1,18 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { debounceTime } from 'rxjs';
+import { BehaviorSubject, Subject, combineLatest } from 'rxjs';
+import { debounceTime, switchMap, startWith } from 'rxjs/operators';
 
 interface Task {
   id: number;
   title: string;
   description: string;
-  status: 'OPEN' | 'DONE';
+  status: 'OPEN' | 'IN_PROGRESS' | 'CLOSED';
   priority: 'LOW' | 'MEDIUM' | 'HIGH';
   dueDate: string;
-}
-
-interface UserSession {
-  username: string;
-  lastLogin: string;
 }
 
 @Component({
@@ -27,70 +23,90 @@ interface UserSession {
 })
 export class TaskComponent implements OnInit {
 
-  tasks: Task[] = [];
+  // Reactive state
+  public tasksSubject = new BehaviorSubject<Task[]>([]);
+  tasks$ = this.tasksSubject.asObservable();
+
+  public filterSubject = new BehaviorSubject<string>('ALL');
+  public searchSubject = new Subject<string>();
+  public pageSubject = new BehaviorSubject<number>(0);
+  public size = 5;
+  public totalPages = 1;
+  username: string | null = null;
+  previousLastLogin: string | null = null;
   taskForm: FormGroup;
   isEditing = false;
   editTaskId: number | null = null;
-  filterStatus: string = 'ALL';
-  searchTerm: string = '';
-  page: number = 0;
-  size: number = 5;
-  totalPages: number = 1;
-  session: UserSession | null = null;
 
   constructor(private fb: FormBuilder, private http: HttpClient, private router: Router) {
     this.taskForm = this.fb.group({
       title: ['', Validators.required],
       description: [''],
       priority: ['MEDIUM'],
-      dueDate: ['']
+      dueDate: [new Date().toISOString().slice(0, 10)]
     });
   }
 
   ngOnInit() {
-    this.fetchSession();
-    this.fetchTasks();
+    this.username = localStorage.getItem('username');
+    this.previousLastLogin = localStorage.getItem('previousLastLogin');
+    combineLatest([
+      this.searchSubject.pipe(startWith(''), debounceTime(300)),
+      this.filterSubject,
+      this.pageSubject
+    ])
+    .pipe(
+      switchMap(([search, filter, page]) => this.fetchTasks(search, filter, page))
+    )
+    .subscribe(res => {
+      this.tasksSubject.next(res.content);
+      this.totalPages = res.totalPages;
+    });
+
+    // Initial fetch
+    this.searchSubject.next('');
+    this.filterSubject.next('OPEN');
+    this.pageSubject.next(0);
   }
 
   get headers() {
     const token = localStorage.getItem('token');
-    return { headers: new HttpHeaders({ Authorization: token || '' }) };
+    return { headers: new HttpHeaders({ Authorization: `Bearer ${token}` }) };
   }
 
-  fetchSession() {
-    this.http.get<UserSession>('http://localhost:8080/api/tasks/session', this.headers)
-      .subscribe(res => this.session = res);
-  }
+  fetchTasks(search: string, filterStatus: string, page: number) {
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', this.size.toString())
+      .set('search', search || '');
 
-  fetchTasks() {
-    const params = { page: this.page.toString(), size: this.size.toString(), search: this.searchTerm };
-    this.http.get<any>('http://localhost:8080/api/tasks', { ...this.headers, params })
-      .subscribe(res => {
-        this.tasks = res.content;
-        this.totalPages = res.totalPages;
-      });
+    if (filterStatus !== 'ALL') {
+      params = params.set('status', filterStatus);
+    }
+
+    return this.http.get<{ content: Task[], totalPages: number }>(
+      'http://localhost:8080/api/tasks',
+      { ...this.headers, params }
+    );
   }
 
   addOrUpdateTask() {
     if (this.taskForm.invalid) return;
 
-    const taskData = this.taskForm.value;
+    const taskData: any = { ...this.taskForm.value };
+    const d = taskData.dueDate ? new Date(taskData.dueDate) : new Date();
+    taskData.dueDate = new Date(d.getFullYear(), d.getMonth(), d.getDate()).toISOString();
 
-    if (this.isEditing && this.editTaskId !== null) {
-      this.http.put(`http://localhost:8080/api/tasks/${this.editTaskId}`, taskData, this.headers)
-        .subscribe(() => {
-          this.isEditing = false;
-          this.editTaskId = null;
-          this.taskForm.reset({ priority: 'MEDIUM' });
-          this.fetchTasks();
-        });
-    } else {
-      this.http.post('http://localhost:8080/api/tasks', taskData, this.headers)
-        .subscribe(() => {
-          this.taskForm.reset({ priority: 'MEDIUM' });
-          this.fetchTasks();
-        });
-    }
+    const request$ = this.isEditing && this.editTaskId
+      ? this.http.put(`http://localhost:8080/api/tasks/${this.editTaskId}`, taskData, this.headers)
+      : this.http.post('http://localhost:8080/api/tasks', taskData, this.headers);
+
+    request$.subscribe(() => {
+      this.isEditing = false;
+      this.editTaskId = null;
+      this.taskForm.reset({ priority: 'MEDIUM', dueDate: new Date().toISOString().slice(0, 10) });
+      this.refreshTasks();
+    });
   }
 
   editTask(task: Task) {
@@ -101,24 +117,37 @@ export class TaskComponent implements OnInit {
 
   deleteTask(id: number) {
     this.http.delete(`http://localhost:8080/api/tasks/${id}`, this.headers)
-      .subscribe(() => this.fetchTasks());
+      .subscribe(() => this.refreshTasks());
   }
 
   toggleStatus(task: Task) {
-    const updated = { ...task, status: task.status === 'OPEN' ? 'DONE' : 'OPEN' };
+    let updated: Task;
+    if(task.status === 'OPEN') updated = {...task, status: 'IN_PROGRESS'};
+    else if(task.status === 'IN_PROGRESS') updated = {...task, status: 'CLOSED'};
+    else updated = {...task, status: 'OPEN'};
+
     this.http.put(`http://localhost:8080/api/tasks/${task.id}`, updated, this.headers)
-      .subscribe(() => this.fetchTasks());
+      .subscribe(() => this.refreshTasks());
   }
 
   setFilter(status: string) {
-    this.filterStatus = status;
-    this.fetchTasks();
+    this.pageSubject.next(0);
+    this.filterSubject.next(status);
   }
 
   searchTasks(term: string) {
-    this.searchTerm = term;
-    this.page = 0;
-    this.fetchTasks();
+    this.pageSubject.next(0);
+    this.searchSubject.next(term);
+  }
+
+  prevPage() {
+    const current = this.pageSubject.value;
+    if (current > 0) this.pageSubject.next(current - 1);
+  }
+
+  nextPage() {
+    const current = this.pageSubject.value;
+    if (current + 1 < this.totalPages) this.pageSubject.next(current + 1);
   }
 
   logout() {
@@ -126,11 +155,11 @@ export class TaskComponent implements OnInit {
     this.router.navigate(['/login']);
   }
 
-  prevPage() {
-    if (this.page > 0) { this.page--; this.fetchTasks(); }
+  private refreshTasks() {
+    this.pageSubject.next(this.pageSubject.value);
   }
 
-  nextPage() {
-    if (this.page + 1 < this.totalPages) { this.page++; this.fetchTasks(); }
+  get page() {
+    return this.pageSubject.value;
   }
 }

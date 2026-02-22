@@ -60,10 +60,23 @@ export class LoginComponent {
     this.isLoading = true;
 
     this.authService.login(this.loginForm.value).subscribe({
-      next: () => {
+      next: (res) => {
         this.isLoading = false;
+
+        //  Save token
+        this.authService.saveToken(res.token);
+
+        //  Save username
+        localStorage.setItem('username', this.loginForm.value.username);
+
+        // Save previous last login (may be null if first login)
+        if (res.previousLastLogin) {
+          localStorage.setItem('previousLastLogin', res.previousLastLogin);
+        } else {
+          localStorage.removeItem('previousLastLogin');
+        }
+
         this.toastr.success('Login successful!');
-        // Navigate to tasks
         this.router.navigate(['tasks']);
       },
       error: (err: HttpErrorResponse) => {
@@ -86,19 +99,28 @@ export class LoginComponent {
     this.isLoading = true;
 
     this.authService.register(this.registerForm.value).subscribe({
-      next: () => {
+      next: (res) => {
         this.isLoading = false;
-        this.toastr.success('Registration successful! You can now login.');
-        this.toggleMode();
+
+        // Auto login: save token
+        this.authService.saveToken(res.token);
+
+        // Save username
+        localStorage.setItem('username', this.registerForm.value.username);
+
+        // First login, so previousLastLogin is null
+        localStorage.removeItem('previousLastLogin');
+
+        this.toastr.success('Registration successful!');
         this.router.navigate(['tasks']);
       },
       error: (err: HttpErrorResponse) => {
         this.isLoading = false;
 
         if (err.status === 409) {
-          this.toastr.error('User already exists. Please login.');
+          this.toastr.error('User already exists.');
         } else {
-          this.toastr.error('Registration failed. Please try again.');
+          this.toastr.error('Registration failed.');
         }
       }
     });

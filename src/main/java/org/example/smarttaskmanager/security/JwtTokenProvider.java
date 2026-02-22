@@ -1,13 +1,14 @@
 package org.example.smarttaskmanager.security;
 
 import io.jsonwebtoken.*;
+import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import org.example.smarttaskmanager.model.Role;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.security.Key;
 
 @Component
@@ -20,13 +21,18 @@ public class JwtTokenProvider {
             @Value("${jwt.secret}") String jwtSecret,
             @Value("${jwt.expiration}") long jwtExpirationMs
     ) {
-        this.secretKey = Keys.hmacShaKeyFor(jwtSecret.getBytes());
+        this.secretKey = Keys.hmacShaKeyFor(
+                Decoders.BASE64.decode(jwtSecret)
+        );
         this.expirationMs = jwtExpirationMs;
     }
 
     // Generate token for user
-    public String generateToken(String username, Set<String> roles) {
-        String rolesString = String.join(",", roles);
+    public String generateToken(String username, Set<Role> roles) {
+        String rolesString = roles.stream()
+                .map(Role::name)
+                .reduce((r1, r2) -> r1 + "," + r2)
+                .orElse("");
 
         return Jwts.builder()
                 .setSubject(username)

@@ -37,7 +37,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
-
         // 1️⃣ Get the Authorization header
         String header = request.getHeader("Authorization");
 
@@ -53,7 +52,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
                 // 5️⃣ Load full user details from database
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-
+                System.out.println("Authorities: " + userDetails.getAuthorities());
                 // 6️⃣ Create an Authentication object and set it in SecurityContext
                 UsernamePasswordAuthenticationToken auth =
                         new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());

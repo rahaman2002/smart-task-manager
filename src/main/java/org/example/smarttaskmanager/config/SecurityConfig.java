@@ -7,6 +7,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -46,32 +47,23 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                // Enable CORS
                 .cors(Customizer.withDefaults())
+                .csrf(AbstractHttpConfigurer::disable) // disable csrf check completely
 
-                // Disable CSRF only for /api/auth/** (login/register)
-                .csrf(csrf -> csrf
-                        .ignoringRequestMatchers("/api/auth/**")
-                )
-
-                // Authorization rules
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()           // allow login/register
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // allow preflight requests
-                        .anyRequest().authenticated()                           // protect all other endpoints
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .anyRequest().authenticated()
                 )
 
-                // Stateless session (no HTTP session)
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 );
 
-        // Add JWT filter BEFORE Spring's UsernamePasswordAuthenticationFilter
         http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
-
     // CORS configuration for Angular frontend
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {

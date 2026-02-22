@@ -9,15 +9,15 @@ export class AuthService {
   constructor(private http: HttpClient) {}
 
   register(data: { username: string; password: string }) {
-    return this.http.post<any>(`${this.API}/register`, data);
+  return this.http.post<any>(`${this.API}/register`, data);
   }
 
   login(data: { username: string; password: string }) {
-    return this.http.post<any>(`${this.API}/login`, data).pipe(
-      tap(res => {
-        localStorage.setItem('token', res.token);
-      })
-    );
+    return this.http.post<any>(`${this.API}/login`, data);
+  }
+
+  saveToken(token: string) {
+    localStorage.setItem('token', token);
   }
 
   logout() {
@@ -27,4 +27,6 @@ export class AuthService {
   getToken() {
     return localStorage.getItem('token');
   }
+
+  
 }

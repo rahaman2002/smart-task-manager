@@ -1,12 +1,14 @@
 package org.example.smarttaskmanager.service;
 
 import lombok.RequiredArgsConstructor;
+import org.example.smarttaskmanager.exception.ResourceNotFoundException;
 import org.example.smarttaskmanager.model.Task;
 import org.example.smarttaskmanager.model.User;
 import org.example.smarttaskmanager.repository.TaskRepository;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
@@ -39,11 +41,22 @@ public class TaskService {
         taskRepository.deleteById(id);
     }
 
-    public Page<Task> getTasksByUser(User user, int page, int size, String search) {
-        if (search != null && !search.isEmpty()) {
-            return taskRepository.findByAssignedToAndTitleContainingIgnoreCase(user, search, PageRequest.of(page, size));
+    public Page<Task> getTasksByUser(User user, int page, int size, String search, String status) {
+        Pageable pageable = PageRequest.of(page, size);
+        if (status != null && !status.equalsIgnoreCase("ALL")) {
+            return taskRepository.findByAssignedToAndStatusAndTitleContainingIgnoreCase(
+                    user, Task.Status.valueOf(status), search == null ? "" : search, pageable
+            );
+        } else {
+            return taskRepository.findByAssignedToAndTitleContainingIgnoreCase(
+                    user, search == null ? "" : search, pageable
+            );
         }
-        return taskRepository.findByAssignedTo(user, PageRequest.of(page, size));
+    }
+
+    public Task getTaskById(Long id) {
+        return taskRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found with id: " + id));
     }
 
     @Cacheable("tasks")

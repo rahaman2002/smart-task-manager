@@ -1,71 +1,87 @@
 <div class="page">
   <div class="card">
 
-    <div class="header">
-      <h2>My Tasks</h2>
-      <div class="session" *ngIf="session">
-        {{ session.username }} | Last Login: {{ session.lastLogin | date:'short' }}
-        <button (click)="logout()">Logout</button>
-      </div>
+   <div class="header">
+    <h2>My Tasks</h2>
+
+    <div class="session" *ngIf="username">
+      {{ username }} 
+      <span *ngIf="previousLastLogin">
+        | Last Login: {{ previousLastLogin | date:'dd MMM yyyy HH:mm' }}
+      </span>
+      <button (click)="logout()">Logout</button>
     </div>
-
-    <!-- Fixed Add/Edit Form -->
-    <form [formGroup]="taskForm" (ngSubmit)="addOrUpdateTask()" class="task-form fixed-form">
-
-      <input type="text" placeholder="Task title" formControlName="title" (input)="searchTasks($event.target.value)" />
-
+  </div>
+    <!-- Add/Edit Task Form -->
+    <form [formGroup]="taskForm" (ngSubmit)="addOrUpdateTask()" class="task-form">
+      <input type="text" placeholder="Task title" formControlName="title" />
       <textarea placeholder="Description" formControlName="description"></textarea>
-
       <div class="form-row">
         <select formControlName="priority">
           <option value="LOW">Low</option>
           <option value="MEDIUM">Medium</option>
           <option value="HIGH">High</option>
         </select>
-
         <input type="date" formControlName="dueDate" />
       </div>
-
       <button type="submit" class="submit-btn">
         {{ isEditing ? 'Update Task' : 'Add Task' }}
       </button>
-
     </form>
 
-    <!-- Scrollable Task List -->
+    <!-- Filters -->
+    <div class="filters">
+      <button (click)="setFilter('ALL')" [class.active]="filterSubject.value==='ALL'">All</button>
+      <button (click)="setFilter('OPEN')" [class.active]="filterSubject.value==='OPEN'">Open</button>
+      <button (click)="setFilter('IN_PROGRESS')" [class.active]="filterSubject.value==='IN_PROGRESS'">In Progress</button>
+      <button (click)="setFilter('CLOSED')" [class.active]="filterSubject.value==='CLOSED'">Closed</button>
+    </div>
+
+    <!-- Task List -->
     <div class="task-list-container">
       <ul class="task-list">
-        <li *ngFor="let task of tasks" class="task-card" [@fadeIn]>
+        <li *ngFor="let task of tasks$ | async" class="task-card" [ngClass]="task.status.toLowerCase()">
+
+          <!-- Task Info -->
           <div class="task-info">
-            <h4 [class.done]="task.status === 'DONE'">{{ task.title }}</h4>
+            <h4>{{ task.title }}</h4>
             <p>{{ task.description }}</p>
-            <small>Priority: {{ task.priority }}</small><br>
-            <small>Due: {{ task.dueDate | date }}</small>
+            <div class="task-meta">
+              <span class="priority {{ task.priority.toLowerCase() }}">{{ task.priority }}</span>
+              <span class="due-date">Due: {{ task.dueDate | date:'dd MMM yyyy' }}</span>
+            </div>
           </div>
+
+          <!-- Actions -->
           <div class="actions">
-            <button class="status-btn" (click)="toggleStatus(task)">
-              {{ task.status === 'OPEN' ? '✔ Done' : '↺ Reopen' }}
+            <!-- Status Button -->
+            <button
+              class="status-btn"
+              [ngClass]="task.status.toLowerCase()"
+              (click)="toggleStatus(task)">
+              {{ task.status === 'OPEN' ? 'In Progress' : task.status === 'IN_PROGRESS' ? 'Close' : 'Reopen' }}
             </button>
-            <button class="edit-btn" (click)="editTask(task)">✎</button>
-            <button class="delete-btn" (click)="deleteTask(task.id)">🗑</button>
+
+            <!-- Edit Button -->
+            <button class="edit-btn" (click)="editTask(task)">
+              Edit
+            </button>
+
+            <!-- Delete Button -->
+            <button class="delete-btn" (click)="deleteTask(task.id)">
+              Delete
+            </button>
           </div>
         </li>
       </ul>
-
-      <!-- Pagination -->
-      <div class="pagination">
-        <button (click)="prevPage()" [disabled]="page===0">Prev</button>
-        <span>Page {{ page + 1 }} of {{ totalPages }}</span>
-        <button (click)="nextPage()" [disabled]="page+1>=totalPages">Next</button>
-      </div>
-
-      <!-- Filter Buttons Fixed at Bottom -->
-      <div class="filters fixed-filters">
-        <button (click)="setFilter('ALL')">All</button>
-        <button (click)="setFilter('OPEN')">Open</button>
-        <button (click)="setFilter('DONE')">Completed</button>
-      </div>
     </div>
 
+  </div>
+
+  <!-- Pagination -->
+  <div class="pagination">
+    <button (click)="prevPage()" [disabled]="page === 0">Prev</button>
+    <span>Page {{ page + 1 }} of {{ totalPages }}</span>
+    <button (click)="nextPage()" [disabled]="page + 1 >= totalPages">Next</button>
   </div>
 </div>
