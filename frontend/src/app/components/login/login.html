@@ -38,6 +38,13 @@
       </div>
 
       <button type="submit" [disabled]="loginForm.invalid">Sign In</button>
+      <button type="button" class="google-btn" (click)="loginWithGoogle()">
+        <span class="google-icon">
+          <img src="https://developers.google.com/identity/images/g-logo.png" />
+        </span>
+        Continue with Google
+      </button>
+      <hr />
 
       <p class="switch-text">
         Don't have an account?
