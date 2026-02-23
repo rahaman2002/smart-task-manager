@@ -41,4 +41,8 @@ export class AuthService {
   isLoggedIn(): boolean {
     return !!this.getToken();
   }
+
+  setPassword(data: { email: string; password: string }): Observable<any> {
+    return this.http.post(`${this.API}/set-password`, data);
+  }
 }

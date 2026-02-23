@@ -16,66 +16,61 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Set;
-
-@Component // Registers this as a Spring bean automatically
+@Component
 public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
-    // Used to generate JWT tokens
+    private final UserRepository userRepository;
     private final JwtTokenProvider jwtTokenProvider;
 
-    // Used to check/create users in database
-    private final UserRepository userRepository;
-
-    // Constructor injection (Spring injects dependencies)
-    public OAuth2SuccessHandler(JwtTokenProvider jwtTokenProvider,
-                                UserRepository userRepository) {
-        this.jwtTokenProvider = jwtTokenProvider;
+    public OAuth2SuccessHandler(UserRepository userRepository, JwtTokenProvider jwtTokenProvider) {
         this.userRepository = userRepository;
+        this.jwtTokenProvider = jwtTokenProvider;
     }
 
-    /**
-     * This method runs automatically AFTER Google login succeeds.
-     */
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request,
                                         HttpServletResponse response,
                                         Authentication authentication)
-            throws IOException, ServletException {
+            throws IOException {
 
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
 
         String email = oAuth2User.getAttribute("email");
         String name = oAuth2User.getAttribute("name");
 
-        // Check if user exists
         User user = userRepository.findByEmail(email)
                 .orElseGet(() -> {
-                    // Register new user
                     User newUser = new User();
                     newUser.setEmail(email);
                     newUser.setUsername(name != null ? name : email.split("@")[0]);
-                    newUser.setPassword(""); // Google user, no password
+                    newUser.setPassword("");
                     newUser.setRoles(Set.of(Role.ROLE_USER));
                     newUser.setLastLogin(LocalDateTime.now());
                     return userRepository.save(newUser);
                 });
 
-        // Save previous last login
+        // Capture previous login BEFORE updating
         LocalDateTime previousLastLogin = user.getLastLogin();
 
-        // Update lastLogin for current login
+        // Update last login to now
         user.setLastLogin(LocalDateTime.now());
         userRepository.save(user);
 
-        // Generate JWT
+        // If password not set → go to set-password page
+        if (user.getPassword() == null || user.getPassword().isEmpty()) {
+            response.sendRedirect(
+                    "http://localhost:4200/set-password?email=" + email
+            );
+            return;
+        }
+
         String token = jwtTokenProvider.generateToken(user.getEmail(), user.getRoles());
 
-        // Redirect to Angular with token, username, previous login
         String redirectUrl = String.format(
                 "http://localhost:4200/login-success?token=%s&username=%s&previousLastLogin=%s",
                 token,
                 user.getUsername(),
-                previousLastLogin != null ? previousLastLogin.toString() : ""
+                previousLastLogin != null ? previousLastLogin : ""
         );
 
         response.sendRedirect(redirectUrl);
