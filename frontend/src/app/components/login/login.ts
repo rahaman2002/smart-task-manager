@@ -13,7 +13,6 @@ import { Router } from '@angular/router';
   templateUrl: './login.html',
   styleUrls: ['./login.css'],
   imports: [ReactiveFormsModule, CommonModule],
-  providers: [FormBuilder],
 })
 export class LoginComponent {
 
@@ -32,26 +31,22 @@ export class LoginComponent {
     private authService: AuthService,
     private toastr: ToastrService
   ) {
-
     this.loginForm = this.fb.group({
-      username: ['', [Validators.required, Validators.minLength(4)]],
+      email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(4)]]
     });
 
     this.registerForm = this.fb.group({
       username: ['', [Validators.required, Validators.minLength(4)]],
+      email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(4)]]
     });
   }
 
   toggleMode() {
     this.isLoginMode = !this.isLoginMode;
-
-    // Reset forms & password visibility
     this.loginForm.reset();
     this.registerForm.reset();
-    this.showLoginPassword = false;
-    this.showRegisterPassword = false;
   }
 
   submitLogin() {
@@ -62,38 +57,28 @@ export class LoginComponent {
     this.authService.login(this.loginForm.value).subscribe({
       next: (res) => {
         this.isLoading = false;
-
-        //  Save token
         this.authService.saveToken(res.token);
-
-        //  Save username
-        localStorage.setItem('username', this.loginForm.value.username);
-
-        // Save previous last login (may be null if first login)
+        localStorage.setItem('username', res.username);
         if (res.previousLastLogin) {
           localStorage.setItem('previousLastLogin', res.previousLastLogin);
         } else {
-          localStorage.removeItem('previousLastLogin');
+          localStorage.removeItem('previousLastLogin'); // first login
         }
-
         this.toastr.success('Login successful!');
         this.router.navigate(['tasks']);
       },
       error: (err: HttpErrorResponse) => {
         this.isLoading = false;
-
-        if (err.status === 404) {
-          this.toastr.error('User not found');
-        } else if (err.status === 401) {
-          this.toastr.error('Invalid username or password');
-        } else {
-          this.toastr.error('Login failed. Please try again.');
-        }
+        if (err.status === 404) this.toastr.error('User not found');
+        else if (err.status === 401) this.toastr.error('Invalid email or password');
+        else this.toastr.error('Login failed');
       }
     });
   }
 
+  // ===== GOOGLE LOGIN =====
   loginWithGoogle() {
+    // Redirect to backend OAuth2 endpoint
     window.location.href = 'http://localhost:8080/oauth2/authorization/google';
   }
 
@@ -105,27 +90,15 @@ export class LoginComponent {
     this.authService.register(this.registerForm.value).subscribe({
       next: (res) => {
         this.isLoading = false;
-
-        // Auto login: save token
         this.authService.saveToken(res.token);
-
-        // Save username
-        localStorage.setItem('username', this.registerForm.value.username);
-
-        // First login, so previousLastLogin is null
-        localStorage.removeItem('previousLastLogin');
+        localStorage.setItem('username', res.username);
 
         this.toastr.success('Registration successful!');
         this.router.navigate(['tasks']);
       },
-      error: (err: HttpErrorResponse) => {
+      error: () => {
         this.isLoading = false;
-
-        if (err.status === 409) {
-          this.toastr.error('User already exists.');
-        } else {
-          this.toastr.error('Registration failed.');
-        }
+        this.toastr.error('Registration failed');
       }
     });
   }
@@ -137,5 +110,4 @@ export class LoginComponent {
   toggleRegisterPassword() {
     this.showRegisterPassword = !this.showRegisterPassword;
   }
-
 }

@@ -152,6 +152,8 @@ export class TaskComponent implements OnInit {
 
   logout() {
     localStorage.removeItem('token');
+    localStorage.removeItem('username');
+    localStorage.removeItem('previousLastLogin');
     this.router.navigate(['/login']);
   }
 

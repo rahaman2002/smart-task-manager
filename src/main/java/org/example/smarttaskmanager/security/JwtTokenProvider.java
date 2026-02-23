@@ -28,14 +28,14 @@ public class JwtTokenProvider {
     }
 
     // Generate token for user
-    public String generateToken(String username, Set<Role> roles) {
+    public String generateToken(String email, Set<Role> roles) {  // rename param
         String rolesString = roles.stream()
                 .map(Role::name)
                 .reduce((r1, r2) -> r1 + "," + r2)
                 .orElse("");
 
         return Jwts.builder()
-                .setSubject(username)
+                .setSubject(email)  // use email, not username
                 .claim("roles", rolesString)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + expirationMs))
@@ -44,7 +44,7 @@ public class JwtTokenProvider {
     }
 
     // Get username from token
-    public String getUsernameFromToken(String token) {
+    public String getEmailFromToken(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(secretKey)
                 .build()

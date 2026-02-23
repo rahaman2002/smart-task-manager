@@ -30,25 +30,31 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
         try {
-            // Authenticate
-            authenticateUser(request.username, request.password);
+            // 1️⃣ Authenticate using EMAIL
+            authenticateUser(request.email, request.password);
 
-            // Fetch user
-            User user = userRepository.findByUsername(request.username)
+            // 2️⃣ Fetch user by EMAIL
+            User user = userRepository.findByEmail(request.email)
                     .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-            // Save previous last login
+            // 3️⃣ Save previous last login
             LocalDateTime previousLastLogin = user.getLastLogin();
 
-            // Update last login
+            // 4️⃣ Update last login
             user.setLastLogin(LocalDateTime.now());
             userRepository.save(user);
 
-            // Generate token
+            // 5️⃣ Generate JWT using EMAIL
             String token = generateTokenForUser(user);
 
-            // Return token + previous last login
-            return ResponseEntity.ok(new LoginResponse(token, previousLastLogin));
+            // 6️⃣ Return token + username + previous login
+            return ResponseEntity.ok(
+                    new LoginResponse(
+                            token,
+                            user.getUsername(),
+                            previousLastLogin
+                    )
+            );
 
         } catch (UsernameNotFoundException ex) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
@@ -61,21 +67,30 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
         try {
-            // 1️⃣ Create user
-            User user = userService.registerUser(request.username, request.password);
+            // 1️⃣ Create user with email + username + password
+            User user = userService.registerUser(
+                    request.username,
+                    request.email,
+                    request.password
+            );
 
-            // 2️⃣ Authenticate immediately
-            authenticateUser(request.username, request.password);
+            // 2️⃣ Authenticate immediately using EMAIL
+            authenticateUser(request.email, request.password);
 
             // 3️⃣ Update last login
             user.setLastLogin(LocalDateTime.now());
             userRepository.save(user);
 
-            // 4️⃣ Generate token
+            // 4️⃣ Generate JWT using EMAIL
             String token = generateTokenForUser(user);
 
-            // Return token (no previous login since it's first login)
-            return ResponseEntity.ok(new LoginResponse(token, null));
+            return ResponseEntity.ok(
+                    new LoginResponse(
+                            token,
+                            user.getUsername(),
+                            null
+                    )
+            );
 
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("User already exists");
@@ -83,34 +98,43 @@ public class AuthController {
     }
 
     // ================= COMMON METHODS =================
-    private void authenticateUser(String username, String password) {
+
+    private void authenticateUser(String email, String password) {
         Authentication authentication = authManager.authenticate(
-                new UsernamePasswordAuthenticationToken(username, password)
+                new UsernamePasswordAuthenticationToken(email, password)
         );
         SecurityContextHolder.getContext().setAuthentication(authentication);
     }
 
     private String generateTokenForUser(User user) {
-        return jwtTokenProvider.generateToken(user.getUsername(), user.getRoles());
+        // 🔥 EMAIL goes inside JWT
+        return jwtTokenProvider.generateToken(
+                user.getEmail(),
+                user.getRoles()
+        );
     }
 
     // ================= REQUEST / RESPONSE CLASSES =================
+
     public static class RegisterRequest {
-        public String username;
+        public String username;  // display name
+        public String email;     // identity
         public String password;
     }
 
     public static class LoginRequest {
-        public String username;
+        public String email;     // login with email
         public String password;
     }
 
     public static class LoginResponse {
         public String token;
+        public String username;
         public LocalDateTime previousLastLogin;
 
-        public LoginResponse(String token, LocalDateTime previousLastLogin) {
+        public LoginResponse(String token, String username, LocalDateTime previousLastLogin) {
             this.token = token;
+            this.username = username;
             this.previousLastLogin = previousLastLogin;
         }
     }

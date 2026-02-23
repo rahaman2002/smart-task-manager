@@ -14,6 +14,7 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.Set;
 
 @Component // Registers this as a Spring bean automatically
@@ -43,27 +44,40 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
 
-        // Use Google email as username
         String email = oAuth2User.getAttribute("email");
+        String name = oAuth2User.getAttribute("name");
 
         // Check if user exists
-        User user = userRepository.findByUsername(email)
+        User user = userRepository.findByEmail(email)
                 .orElseGet(() -> {
+                    // Register new user
                     User newUser = new User();
-                    newUser.setUsername(email);   // ✅ store email as username
-                    newUser.setPassword("");      // no password for Google users
+                    newUser.setEmail(email);
+                    newUser.setUsername(name != null ? name : email.split("@")[0]);
+                    newUser.setPassword(""); // Google user, no password
                     newUser.setRoles(Set.of(Role.ROLE_USER));
+                    newUser.setLastLogin(LocalDateTime.now());
                     return userRepository.save(newUser);
                 });
 
+        // Save previous last login
+        LocalDateTime previousLastLogin = user.getLastLogin();
+
+        // Update lastLogin for current login
+        user.setLastLogin(LocalDateTime.now());
+        userRepository.save(user);
+
         // Generate JWT
-        String token = jwtTokenProvider.generateToken(
+        String token = jwtTokenProvider.generateToken(user.getEmail(), user.getRoles());
+
+        // Redirect to Angular with token, username, previous login
+        String redirectUrl = String.format(
+                "http://localhost:4200/login-success?token=%s&username=%s&previousLastLogin=%s",
+                token,
                 user.getUsername(),
-                user.getRoles()
+                previousLastLogin != null ? previousLastLogin.toString() : ""
         );
 
-        response.sendRedirect(
-                "http://localhost:4200/login-success?token=" + token
-        );
+        response.sendRedirect(redirectUrl);
     }
 }

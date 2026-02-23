@@ -10,7 +10,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.HashSet;
 import java.util.Set;
 
 @Service
@@ -21,41 +20,56 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
 
-    // Register user
-    public User registerUser(String username, String password) {
-        if (userRepository.findByUsername(username).isPresent()) {
+    // ================= REGISTER USER =================
+    public User registerUser(String username, String email, String password) {
+
+        if (userRepository.findByEmail(email).isPresent()) {
             throw new RuntimeException("User already exists");
         }
+
         User user = User.builder()
-                .username(username)
+                .username(username) // display name
+                .email(email)       // identity
                 .password(passwordEncoder.encode(password))
-                .roles(new HashSet<>())
+                .roles(Set.of(Role.ROLE_USER))
                 .build();
-        user.setRoles(Set.of(Role.ROLE_USER));
+
         return userRepository.save(user);
     }
 
-    // Get user by username
-    public User getUserByUsername(String username) {
-        return userRepository.findByUsername(username)
+    // ================= FIND USER BY EMAIL =================
+    public User getUserByEmail(String email) {
+        return userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
     }
 
-    //  Get user from JWT token
+    // ================= GET USER FROM JWT =================
     public User getUserFromToken(String token) {
-        if (token.startsWith("Bearer ")) token = token.substring(7);
-        String username = jwtTokenProvider.getUsernameFromToken(token);
-        return getUserByUsername(username);
+
+        if (token.startsWith("Bearer ")) {
+            token = token.substring(7);
+        }
+
+        // JWT subject now stores EMAIL
+        String email = jwtTokenProvider.getEmailFromToken(token);
+
+        return getUserByEmail(email);
     }
 
-    //  Get currently authenticated user
+    // ================= GET CURRENT AUTHENTICATED USER =================
     public User getCurrentUser() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+        Authentication auth = SecurityContextHolder
+                .getContext()
+                .getAuthentication();
+
         if (auth == null || !auth.isAuthenticated()) {
             throw new RuntimeException("No authenticated user found");
         }
 
-        String username = auth.getName(); // Spring Security stores username here
-        return getUserByUsername(username);
+        // Spring stores EMAIL as principal name
+        String email = auth.getName();
+
+        return getUserByEmail(email);
     }
 }
