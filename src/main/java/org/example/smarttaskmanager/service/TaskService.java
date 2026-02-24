@@ -20,20 +20,20 @@ import java.util.List;
 public class TaskService {
 
     private final TaskRepository taskRepository;
-    private final RabbitTemplate rabbitTemplate;
+//    private final RabbitTemplate rabbitTemplate;
 
     public Task createTask(Task task) {
         task.setCreatedAt(LocalDateTime.now());
         task.setUpdatedAt(LocalDateTime.now());
         Task saved = taskRepository.save(task);
-        rabbitTemplate.convertAndSend("task_notifications", "New Task: " + task.getTitle());
+//        rabbitTemplate.convertAndSend("task_notifications", "New Task: " + task.getTitle());
         return saved;
     }
 
     public Task updateTask(Task task) {
         task.setUpdatedAt(LocalDateTime.now());
         Task updated = taskRepository.save(task);
-        rabbitTemplate.convertAndSend("task_notifications", "Task Updated: " + task.getTitle());
+//        rabbitTemplate.convertAndSend("task_notifications", "Task Updated: " + task.getTitle());
         return updated;
     }
 
