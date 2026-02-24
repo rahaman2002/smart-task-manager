@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  API_URL: 'https://your-backend-name.onrender.com'
+  apiUrl: 'https://smart-task-manager-klf0.onrender.com'
 };
