@@ -1,0 +1,48 @@
+diff --git a/src/main/java/org/example/smarttaskmanager/config/CorsConfig.java b/src/main/java/org/example/smarttaskmanager/config/CorsConfig.java
+index 3756ae3..9a0d3d8 100644
+--- a/src/main/java/org/example/smarttaskmanager/config/CorsConfig.java
++++ b/src/main/java/org/example/smarttaskmanager/config/CorsConfig.java
+@@ -10,7 +10,7 @@ public class CorsConfig implements WebMvcConfigurer {
+     @Override
+     public void addCorsMappings(CorsRegistry registry) {
+         registry.addMapping("/**")
+-                .allowedOrigins("http://localhost:4200")  // your Angular app
++                .allowedOrigins("https://smart-task-manager-chi.vercel.app")  // your Angular app
+                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                 .allowedHeaders("*")
+                 .allowCredentials(true);
+diff --git a/src/main/java/org/example/smarttaskmanager/config/OAuth2SuccessHandler.java b/src/main/java/org/example/smarttaskmanager/config/OAuth2SuccessHandler.java
+index f97410c..5d8291f 100644
+--- a/src/main/java/org/example/smarttaskmanager/config/OAuth2SuccessHandler.java
++++ b/src/main/java/org/example/smarttaskmanager/config/OAuth2SuccessHandler.java
+@@ -59,7 +59,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
+         // If password not set → go to set-password page
+         if (user.getPassword() == null || user.getPassword().isEmpty()) {
+             response.sendRedirect(
+-                    "http://localhost:4200/set-password?email=" + email
++                    "https://smart-task-manager-chi.vercel.app/set-password?email=" + email
+             );
+             return;
+         }
+@@ -67,7 +67,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
+         String token = jwtTokenProvider.generateToken(user.getEmail(), user.getRoles());
+ 
+         String redirectUrl = String.format(
+-                "http://localhost:4200/login-success?token=%s&username=%s&previousLastLogin=%s",
++                "https://smart-task-manager-chi.vercel.app/login-success?token=%s&username=%s&previousLastLogin=%s",
+                 token,
+                 user.getUsername(),
+                 previousLastLogin != null ? previousLastLogin : ""
+diff --git a/src/main/java/org/example/smarttaskmanager/config/SecurityConfig.java b/src/main/java/org/example/smarttaskmanager/config/SecurityConfig.java
+index cc5423a..ac97e16 100644
+--- a/src/main/java/org/example/smarttaskmanager/config/SecurityConfig.java
++++ b/src/main/java/org/example/smarttaskmanager/config/SecurityConfig.java
+@@ -127,7 +127,7 @@ public class SecurityConfig {
+         CorsConfiguration config = new CorsConfiguration();
+ 
+         // Allow Angular dev server
+-        config.setAllowedOrigins(List.of("http://localhost:4200"));
++        config.setAllowedOrigins(List.of("https://smart-task-manager-chi.vercel.app/"));
+ 
+         // Allow these HTTP methods
+         config.setAllowedMethods(List.of(
