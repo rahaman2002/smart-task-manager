@@ -127,7 +127,7 @@ public class SecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
 
         // Allow Angular dev server
-        config.setAllowedOrigins(List.of("http://localhost:4200"));
+        config.setAllowedOrigins(List.of("https://smart-task-manager-chi.vercel.app/"));
 
         // Allow these HTTP methods
         config.setAllowedMethods(List.of(

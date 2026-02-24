@@ -59,7 +59,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         // If password not set → go to set-password page
         if (user.getPassword() == null || user.getPassword().isEmpty()) {
             response.sendRedirect(
-                    "http://localhost:4200/set-password?email=" + email
+                    "https://smart-task-manager-chi.vercel.app/set-password?email=" + email
             );
             return;
         }
@@ -67,7 +67,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         String token = jwtTokenProvider.generateToken(user.getEmail(), user.getRoles());
 
         String redirectUrl = String.format(
-                "http://localhost:4200/login-success?token=%s&username=%s&previousLastLogin=%s",
+                "https://smart-task-manager-chi.vercel.app/login-success?token=%s&username=%s&previousLastLogin=%s",
                 token,
                 user.getUsername(),
                 previousLastLogin != null ? previousLastLogin : ""
