@@ -6,6 +6,7 @@ import { ToastrService } from 'ngx-toastr';
 import { AuthService } from '../../services/auth.service';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
+import { environment } from '../../../environments/environment.prod';
 
 @Component({
   selector: 'app-login',
@@ -79,7 +80,7 @@ export class LoginComponent {
   // ===== GOOGLE LOGIN =====
   loginWithGoogle() {
     // Redirect to backend OAuth2 endpoint
-    window.location.href = 'http://localhost:8080/oauth2/authorization/google';
+    window.location.href = environment.API_URL + '/oauth2/authorization/google';
   }
 
   submitRegister() {

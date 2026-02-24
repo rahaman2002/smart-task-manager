@@ -5,6 +5,7 @@ import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { BehaviorSubject, Subject, combineLatest } from 'rxjs';
 import { debounceTime, switchMap, startWith } from 'rxjs/operators';
+import { environment } from '../../../environments/environment';
 
 interface Task {
   id: number;
@@ -85,7 +86,7 @@ export class TaskComponent implements OnInit {
     }
 
     return this.http.get<{ content: Task[], totalPages: number }>(
-      'http://localhost:8080/api/tasks',
+      environment.API_URL + '/api/tasks',
       { ...this.headers, params }
     );
   }
@@ -98,8 +99,8 @@ export class TaskComponent implements OnInit {
     taskData.dueDate = new Date(d.getFullYear(), d.getMonth(), d.getDate()).toISOString();
 
     const request$ = this.isEditing && this.editTaskId
-      ? this.http.put(`http://localhost:8080/api/tasks/${this.editTaskId}`, taskData, this.headers)
-      : this.http.post('http://localhost:8080/api/tasks', taskData, this.headers);
+      ? this.http.put(`${environment.API_URL}/api/tasks/${this.editTaskId}`, taskData, this.headers)
+      : this.http.post(`${environment.API_URL}/api/tasks`, taskData, this.headers);
 
     request$.subscribe(() => {
       this.isEditing = false;
@@ -116,7 +117,7 @@ export class TaskComponent implements OnInit {
   }
 
   deleteTask(id: number) {
-    this.http.delete(`http://localhost:8080/api/tasks/${id}`, this.headers)
+    this.http.delete(`${environment.API_URL}/api/tasks/${id}`, this.headers)
       .subscribe(() => this.refreshTasks());
   }
 
@@ -126,7 +127,7 @@ export class TaskComponent implements OnInit {
     else if(task.status === 'IN_PROGRESS') updated = {...task, status: 'CLOSED'};
     else updated = {...task, status: 'OPEN'};
 
-    this.http.put(`http://localhost:8080/api/tasks/${task.id}`, updated, this.headers)
+    this.http.put(`${environment.API_URL}/api/tasks/${task.id}`, updated, this.headers)
       .subscribe(() => this.refreshTasks());
   }
 
